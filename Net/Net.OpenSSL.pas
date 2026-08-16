@@ -952,6 +952,7 @@ var
   OPENSSL_init_crypto: function(opts: UInt64; settings: Pointer): Integer; cdecl;
   OPENSSL_cleanup: procedure; cdecl;
 
+  ERR_clear_error: procedure; cdecl;
   ERR_error_string_n: procedure(err: Cardinal; buf: MarshaledAString; len: size_t); cdecl;
   ERR_get_error: function: Cardinal; cdecl;
   ERR_peek_last_error: function: Cardinal; cdecl;
@@ -1181,6 +1182,8 @@ function OPENSSL_init_crypto(opts: UInt64; settings: Pointer): Integer; cdecl;
 procedure OPENSSL_cleanup; cdecl;
   external {$IFDEF __STATIC_WITH_EXTERNAL__}LIBCRYPTO_NAME{$ENDIF} name 'OPENSSL_cleanup';
 
+procedure ERR_clear_error; cdecl;
+  external {$IFDEF __STATIC_WITH_EXTERNAL__}LIBCRYPTO_NAME{$ENDIF} name 'ERR_clear_error';
 procedure ERR_error_string_n(err: Cardinal; buf: MarshaledAString; len: size_t); cdecl;
   external {$IFDEF __STATIC_WITH_EXTERNAL__}LIBCRYPTO_NAME{$ENDIF} name 'ERR_error_string_n';
 function ERR_get_error: Cardinal; cdecl;
@@ -2166,7 +2169,7 @@ end;
 
 procedure ClearOpenSslErrors;
 begin
-  while ERR_get_error() <> 0 do;
+  ERR_clear_error();
 end;
 
 function GetOpenSslErrors: string;
@@ -3654,6 +3657,7 @@ begin
     @OPENSSL_init_crypto := GetSslLibProc(FCryptoLibHandle, 'OPENSSL_init_crypto');
     @OPENSSL_cleanup := GetSslLibProc(FCryptoLibHandle, 'OPENSSL_cleanup');
 
+    @ERR_clear_error := GetSslLibProc(FCryptoLibHandle, 'ERR_clear_error');
     @ERR_error_string_n := GetSslLibProc(FCryptoLibHandle, 'ERR_error_string_n');
     @ERR_get_error := GetSslLibProc(FCryptoLibHandle, 'ERR_get_error');
     @ERR_peek_last_error := GetSslLibProc(FCryptoLibHandle, 'ERR_peek_last_error');
