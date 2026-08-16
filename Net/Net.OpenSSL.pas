@@ -1641,7 +1641,6 @@ function SSL_error_message(ssl_error: Cardinal): string;
 function OPENSSL_malloc(num: Integer): Pointer; inline;
 procedure OPENSSL_free(str: Pointer); inline;
 
-procedure ClearOpenSslErrors;
 function GetOpenSslErrors: string;
 
 type
@@ -2167,11 +2166,6 @@ begin
   CRYPTO_free(str, '', 0);
 end;
 
-procedure ClearOpenSslErrors;
-begin
-  ERR_clear_error();
-end;
-
 function GetOpenSslErrors: string;
 var
   LError: Cardinal;
@@ -2376,7 +2370,7 @@ begin
   LBIOCert := nil;
   try
     try
-      ClearOpenSslErrors;
+      ERR_clear_error();
       LBIOCert := BIO_new_mem_buf(ACABuf, LValidSize);
       if LBIOCert = nil then
         raise ESsl.CreateFmt('Failed to allocate CA certificate cache: %s.',
@@ -2384,7 +2378,7 @@ begin
 
       while BIO_pending(LBIOCert) > 0 do
       begin
-        ClearOpenSslErrors;
+        ERR_clear_error();
         LCACert := PEM_read_bio_X509_AUX(LBIOCert, nil, nil, nil);
         if LCACert = nil then
           raise ESsl.CreateFmt('Failed to read CA certificate data: %s.',
@@ -2421,7 +2415,7 @@ begin
     for I := 0 to High(LCACerts) do
     begin
       LAddedToStore := False;
-      ClearOpenSslErrors;
+      ERR_clear_error();
       if X509_STORE_add_cert(LCertStore, LCACerts[I]) > 0 then
         LAddedToStore := True
       else
@@ -2439,7 +2433,7 @@ begin
         // 只有精确匹配该组合时才按重复添加处理，其他错误不能被吞掉。
         if (LErrorLib = ERR_LIB_X509)
           and ((LError and $FFF) = X509_R_CERT_ALREADY_IN_HASH_TABLE) then
-          ClearOpenSslErrors
+          ERR_clear_error()
         else
         begin
           LErrorMessage := GetOpenSslErrors;
@@ -2452,7 +2446,7 @@ begin
       // 已存在于本上下文 trust store 的证书此前已加入 CA-list，跳过可保持幂等。
       if not LAddedToStore then Continue;
 
-      ClearOpenSslErrors;
+      ERR_clear_error();
       if SSL_CTX_add_client_CA(AContext, LCACerts[I]) <= 0 then
       begin
         LErrorMessage := GetOpenSslErrors;
@@ -2522,7 +2516,7 @@ begin
     try
       while (BIO_pending(LBIOCert) > 0) do
       begin
-        ClearOpenSslErrors;
+        ERR_clear_error();
         LSSLCert := PEM_read_bio_X509(LBIOCert, nil, nil, nil);
         if (LSSLCert = nil) then
           raise ESsl.CreateFmt('Failed to read certificate data: %s.',
@@ -2545,19 +2539,19 @@ begin
     if (Length(LCerts) = 0) then
       raise ESsl.Create('Certificate data contains no certificate.');
 
-    ClearOpenSslErrors;
+    ERR_clear_error();
     if SSL_CTX_use_certificate(AContext, LCerts[0]) <= 0 then
       raise ESsl.CreateFmt('Failed to use certificate: %s.',
         [GetOpenSslErrors]);
 
-    ClearOpenSslErrors;
+    ERR_clear_error();
     if SSL_CTX_clear_chain_certs(AContext) <= 0 then
       raise ESsl.CreateFmt('Failed to clear certificate chain: %s.',
         [GetOpenSslErrors]);
 
     for I := 1 to High(LCerts) do
     begin
-      ClearOpenSslErrors;
+      ERR_clear_error();
       if SSL_CTX_add1_chain_cert(AContext, LCerts[I]) <= 0 then
       begin
         LErrorMessage := GetOpenSslErrors;
@@ -2601,7 +2595,7 @@ var
   LPasswordBytes: TBytes;
   LPasswordData: TPemPasswordData;
 begin
-  ClearOpenSslErrors;
+  ERR_clear_error();
   if AContext = nil then
     raise ESsl.Create('SSL context is nil.');
   if (APKeyBuf = nil) or (APKeyBufSize <= 0) then
@@ -2613,30 +2607,30 @@ begin
   if LPasswordData.Length > 0 then
     LPasswordData.Data := @LPasswordBytes[0];
   try
-    ClearOpenSslErrors;
+    ERR_clear_error();
     LBIOKey := BIO_new_mem_buf(APKeyBuf, APKeyBufSize);
     if (LBIOKey = nil) then
       raise ESsl.CreateFmt('Failed to allocate private key cache: %s.',
         [GetOpenSslErrors]);
     try
-      ClearOpenSslErrors;
+      ERR_clear_error();
       LSSLPKey := PEM_read_bio_PrivateKey(LBIOKey, nil,
         PemPasswordCallback, @LPasswordData);
       if (LSSLPKey = nil) then
         raise ESsl.CreateFmt('Failed to read private key data: %s.',
           [GetOpenSslErrors]);
       try
-        ClearOpenSslErrors;
+        ERR_clear_error();
         LSSLCert := SSL_CTX_get0_certificate(AContext);
         if LSSLCert = nil then
           raise ESsl.Create('Certificate must be set before private key.');
 
-        ClearOpenSslErrors;
+        ERR_clear_error();
         if X509_check_private_key(LSSLCert, LSSLPKey) <= 0 then
           raise ESsl.CreateFmt('Private key does not match the certificate: %s.',
             [GetOpenSslErrors]);
 
-        ClearOpenSslErrors;
+        ERR_clear_error();
         if SSL_CTX_use_PrivateKey(AContext, LSSLPKey) <= 0 then
           raise ESsl.CreateFmt('Failed to use private key: %s.',
             [GetOpenSslErrors]);

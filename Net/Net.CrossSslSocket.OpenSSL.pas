@@ -347,7 +347,7 @@ begin
       begin
         if AHost = '' then
           raise ECrossSocket.Create('A host name is required when peer verification is enabled.');
-        ClearOpenSslErrors;
+        ERR_clear_error();
         if SSL_set1_host(FSslData, PAnsiChar(LHostAnsi)) <= 0 then
           raise ECrossSocket.CreateFmt('SSL_set1_host failed: %s.',
             [GetOpenSslErrors]);
