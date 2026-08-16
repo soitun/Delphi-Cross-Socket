@@ -12,7 +12,7 @@ unit Net.OpenSSL;
 {$I zLib.inc}
 
 {
-  本单元支持 openssl 1.1 及以上版本
+  本单元支持 openssl 1.1.1 及以上版本
 
   OpenSSL 下载:
   https://wiki.openssl.org/index.php/Binaries
