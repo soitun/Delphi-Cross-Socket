@@ -412,6 +412,7 @@ end;
 
 function TCrossOpenSslConnection._BIO_read(Buf: Pointer; Len: Integer): Integer;
 begin
+  ERR_clear_error();
   Result := BIO_read(FBIOOut, Buf, Len);
 end;
 
@@ -471,11 +472,13 @@ end;
 function TCrossOpenSslConnection._BIO_write(Buf: Pointer; Len: Integer
   ): Integer;
 begin
+  ERR_clear_error();
   Result := BIO_write(FBIOIn, Buf, Len);
 end;
 
 function TCrossOpenSslConnection._SSL_read(Buf: Pointer; Len: Integer): Integer;
 begin
+  ERR_clear_error();
   Result := SSL_read(FSslData, Buf, Len);
 end;
 
@@ -533,16 +536,19 @@ end;
 function TCrossOpenSslConnection._SSL_write(Buf: Pointer; Len: Integer
   ): Integer;
 begin
+  ERR_clear_error();
   Result := SSL_write(FSslData, Buf, Len);
 end;
 
 function TCrossOpenSslConnection._SSL_do_handshake: Integer;
 begin
+  ERR_clear_error();
   Result := SSL_do_handshake(FSslData);
 end;
 
 function TCrossOpenSslConnection._SSL_is_init_finished: Integer;
 begin
+  ERR_clear_error();
   Result := SSL_is_init_finished(FSslData);
 end;
 
